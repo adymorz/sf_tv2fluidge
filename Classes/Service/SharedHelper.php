@@ -296,7 +296,22 @@ class Tx_SfTv2fluidge_Service_SharedHelper implements t3lib_Singleton {
 	 * @return array
 	 */
 	public function getGeContentCols($geKey) {
-		$geRecord = $this->getGridElement($geKey);
+		$geRecord = $this->getGridElementFromDb($geKey);
+        if (!$geRecord) {
+            // todo remove redundant code to getContentColsFromTs()
+            $geRecord = $this->getGridElementFromTs($geKey);
+            $data = $geRecord['config'];
+            $contentCols = array();
+            $contentCols[''] = Tx_Extbase_Utility_Localization::translate('label_select', 'sf_tv2fluidge');
+            if ($data) {
+                foreach($data['rows.'] as $row) {
+                    foreach($row['columns.'] as $column) {
+                        $contentCols[$column['colPos']] = $column['name'];
+                    }
+                }
+            }
+            return $contentCols;
+        }
 		return $this->getContentColsFromTs($geRecord['config']);
 	}
 
@@ -822,7 +837,7 @@ class Tx_SfTv2fluidge_Service_SharedHelper implements t3lib_Singleton {
 	 * @param string|int $key
 	 * @return array mixed
 	 */
-	private function getGridElement($key) {
+	private function getGridElementFromDb($key) {
 		$fields = '*';
 		$table = 'tx_gridelements_backend_layout';
 		$where = '';
@@ -837,6 +852,22 @@ class Tx_SfTv2fluidge_Service_SharedHelper implements t3lib_Singleton {
 		$res = $GLOBALS['TYPO3_DB']->exec_SELECTgetSingleRow($fields, $table, $where, '', '', '');
 		return $res;
 	}
+
+
+    private function getGridElementFromTs($key) {
+        // todo replace hardcoded value
+        $pageId = 3;
+
+        $pageTSconfig = \TYPO3\CMS\Backend\Utility\BackendUtility::getPagesTSconfig($pageId);
+
+        if (isset($pageTSconfig['tx_gridelements.']['setup.'][$key . '.'])) {
+            $result = array();
+            $result['config'] = $pageTSconfig['tx_gridelements.']['setup.'][$key . '.']['config.'];
+            return $result;
+        }
+
+        return null;
+    }
 
 	/**
 	 * Returns the TO record for the given uid

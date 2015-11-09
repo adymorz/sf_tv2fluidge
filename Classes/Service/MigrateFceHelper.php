@@ -110,12 +110,19 @@ class Tx_SfTv2fluidge_Service_MigrateFceHelper implements t3lib_Singleton {
 		return $fces;
 	}
 
+    public function getAllGe() {
+        return array_merge(
+            $this->getAllGeFromTs(),
+            $this->getAllGeFromDb()
+        );
+    }
+
 	/**
 	 * Returns an array of all Grid Elements
 	 *
 	 * @return array
 	 */
-	public function getAllGe() {
+	public function getAllGeFromDb() {
 		/* Select all, because field "alias" is not available in older versions of GE */
 		$fields = '*';
 		$table = 'tx_gridelements_backend_layout';
@@ -135,6 +142,26 @@ class Tx_SfTv2fluidge_Service_MigrateFceHelper implements t3lib_Singleton {
 
 		return $gridElements;
 	}
+
+    public function getAllGeFromTs() {
+        $gridLayoutConfig = array();
+
+        // todo replace hardcoded value
+        $pageId = 3;
+
+        $pageTSconfig = \TYPO3\CMS\Backend\Utility\BackendUtility::getPagesTSconfig($pageId);
+
+        if (isset($pageTSconfig['tx_gridelements.']['setup.'])) {
+            foreach ($pageTSconfig['tx_gridelements.']['setup.'] as $layoutId => $item) {
+                // remove tailing dot of layout ID
+                $layoutId = rtrim($layoutId, '.');
+
+                $gridLayoutConfig[$layoutId] = $item['title'];
+            }
+        }
+
+        return $gridLayoutConfig;
+    }
 
 	/**
 	 * Returns the tt_content record by uid
